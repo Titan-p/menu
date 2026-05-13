@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   CalendarDays,
   ChevronRight,
@@ -9,22 +10,30 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import {
-  categories,
-  featuredRecipe,
-  navItems,
-  quickFilters,
-  recipes,
-  stats,
-} from "@/lib/sample-data";
+import { signOut } from "@/app/actions/auth";
+import { getDashboardData } from "@/lib/dashboard-data";
+import { navItems, quickFilters } from "@/lib/sample-data";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const dashboard = await getDashboardData();
+  const featuredRecipe = dashboard.featuredRecipe;
+  const secondaryRecipes = dashboard.recipes.filter((recipe) => recipe.id !== featuredRecipe.id);
+  const memberCount = dashboard.stats.find((item) => item.label === "成员")?.value ?? "4";
+  const isAuthenticated = dashboard.authMode === "signed-in" || dashboard.authMode === "empty";
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-24 pt-4 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-4 py-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-medium text-emerald-700">潘家厨房</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-emerald-700">{dashboard.householdName}</p>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-500 shadow-sm">
+                {dashboard.statusText}
+              </span>
+            </div>
             <h1 className="mt-1 text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
               今天吃什么
             </h1>
@@ -43,6 +52,27 @@ export default function Home() {
               <Plus className="size-5" aria-hidden="true" />
               <span className="sr-only">添加菜谱</span>
             </button>
+            {dashboard.authMode === "empty" ? (
+              <Link
+                href="/setup"
+                className="hidden h-11 items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800 shadow-sm transition hover:border-emerald-400 sm:inline-flex"
+              >
+                创建家庭
+              </Link>
+            ) : isAuthenticated ? (
+              <form action={signOut}>
+                <button className="hidden h-11 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-700 sm:inline-flex sm:items-center">
+                  退出
+                </button>
+              </form>
+            ) : (
+              <Link
+                href="/login"
+                className="hidden h-11 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-700 sm:inline-flex"
+              >
+                登录
+              </Link>
+            )}
           </div>
         </header>
 
@@ -117,11 +147,11 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">家庭空间</p>
-                  <p className="font-semibold text-slate-950">4 位成员共享</p>
+                  <p className="font-semibold text-slate-950">{memberCount} 位成员共享</p>
                 </div>
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2">
-                {stats.map((item) => (
+                {dashboard.stats.slice(0, 3).map((item) => (
                   <div key={item.label} className="rounded-[8px] bg-slate-50 p-3">
                     <p className="text-xl font-semibold text-slate-950">{item.value}</p>
                     <p className="mt-1 text-xs text-slate-500">{item.label}</p>
@@ -173,7 +203,7 @@ export default function Home() {
               <button className="text-sm font-medium text-emerald-700">管理</button>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              {categories.map((category) => {
+              {dashboard.categories.map((category) => {
                 const Icon = category.icon;
                 return (
                   <button
@@ -213,46 +243,64 @@ export default function Home() {
             </div>
 
             <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {recipes.slice(1).map((recipe) => (
-                <article
-                  key={recipe.id}
-                  className="overflow-hidden rounded-[8px] border border-slate-200 bg-white shadow-sm"
-                >
-                  <div className="relative aspect-[4/3]">
-                    <Image
-                      src={recipe.image}
-                      alt={recipe.imageAlt}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-emerald-700">{recipe.category}</p>
-                        <h3 className="mt-1 truncate text-lg font-semibold text-slate-950">
-                          {recipe.title}
-                        </h3>
-                      </div>
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
-                        <Clock3 className="size-3.5" aria-hidden="true" />
-                        {recipe.cookTime}
-                      </span>
+              {secondaryRecipes.length > 0 ? (
+                secondaryRecipes.map((recipe) => (
+                  <article
+                    key={recipe.id}
+                    className="overflow-hidden rounded-[8px] border border-slate-200 bg-white shadow-sm"
+                  >
+                    <div className="relative aspect-[4/3]">
+                      <Image
+                        src={recipe.image}
+                        alt={recipe.imageAlt}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover"
+                      />
                     </div>
-                    <p className="mt-3 line-clamp-2 min-h-10 text-sm leading-5 text-slate-600">
-                      {recipe.note}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {recipe.tags.map((tag) => (
-                        <span key={tag} className="rounded-full bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
-                          {tag}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-emerald-700">{recipe.category}</p>
+                          <h3 className="mt-1 truncate text-lg font-semibold text-slate-950">
+                            {recipe.title}
+                          </h3>
+                        </div>
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                          <Clock3 className="size-3.5" aria-hidden="true" />
+                          {recipe.cookTime}
                         </span>
-                      ))}
+                      </div>
+                      <p className="mt-3 line-clamp-2 min-h-10 text-sm leading-5 text-slate-600">
+                        {recipe.note}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {recipe.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full bg-slate-50 px-2.5 py-1 text-xs text-slate-600"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-[8px] border border-dashed border-slate-300 bg-white p-8 text-center md:col-span-2 xl:col-span-3">
+                  <p className="text-base font-semibold text-slate-950">菜谱库等待添加第一道菜</p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    登录并创建家庭空间后，新增菜谱会出现在这里。
+                  </p>
+                  <Link
+                    href="/login"
+                    className="mt-5 inline-flex h-11 items-center justify-center rounded-[8px] bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                  >
+                    去登录
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </section>

@@ -101,6 +101,8 @@ export const categories: Category[] = [
   { name: "清库存", count: 5, icon: Carrot, tone: "bg-orange-100 text-orange-800" },
 ];
 
+export const defaultCategoryNames = categories.map((category) => category.name);
+
 export const quickFilters = [
   "20 分钟内",
   "下饭",
