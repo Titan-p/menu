@@ -46,13 +46,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         ) : null}
 
-        {isLoggedIn ? (
-          <form action={logout} className="flex justify-end">
-            <button className="rounded-[8px] border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-emerald-400 hover:text-emerald-700">
-              退出登录
-            </button>
-          </form>
-        ) : (
+        {isLoggedIn ? null : (
           <section className="rounded-[8px] border border-slate-200 bg-white p-4">
             <div className="flex items-center gap-2">
               <KeyRound className="size-4 text-emerald-700" aria-hidden="true" />
@@ -75,70 +69,81 @@ export default async function Home({ searchParams }: HomeProps) {
         )}
 
         {isLoggedIn ? (
-          <section className="rounded-[8px] border border-slate-200 bg-white p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold tracking-normal">添加菜谱</h2>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                <KeyRound className="size-3.5" aria-hidden="true" />
-                已登录
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-slate-500">保存后会同步到 Supabase。</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <details className="group rounded-[8px] border border-slate-200 bg-white sm:min-w-72 sm:flex-1">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-950">
+                  <span className="grid size-8 place-items-center rounded-full bg-slate-950 text-white">
+                    <Plus className="size-4" aria-hidden="true" />
+                  </span>
+                  添加菜谱
+                </span>
+                <span className="text-xs text-slate-500 group-open:hidden">点击填写</span>
+                <span className="hidden text-xs text-slate-500 group-open:inline">填写中</span>
+              </summary>
 
-            <form action={createRecipe} className="mt-4 grid gap-3">
-              <div className="grid gap-3 sm:grid-cols-[1fr_140px_120px]">
-                <TextField name="title" label="菜名" placeholder="番茄炒蛋" required />
+              <form action={createRecipe} className="grid gap-3 border-t border-slate-200 p-4">
+                <p className="text-sm text-slate-500">保存后会同步到 Supabase。</p>
+                <div className="grid gap-3 sm:grid-cols-[1fr_140px_120px]">
+                  <TextField name="title" label="菜名" placeholder="番茄炒蛋" required />
+                  <label className="block">
+                    <span className="text-xs font-medium text-slate-500">分类</span>
+                    <select
+                      name="category"
+                      className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500"
+                    >
+                      {dashboard.categories.map((category) => (
+                        <option key={category.name} value={category.name}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <TextField
+                    name="cook_time_minutes"
+                    label="分钟"
+                    type="number"
+                    placeholder="15"
+                    min="1"
+                  />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
+                  <TextField name="ingredients" label="食材" placeholder="番茄、鸡蛋、葱" />
+                  <label className="block">
+                    <span className="text-xs font-medium text-slate-500">难度</span>
+                    <select
+                      name="difficulty"
+                      defaultValue="easy"
+                      className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500"
+                    >
+                      <option value="easy">简单</option>
+                      <option value="medium">中等</option>
+                      <option value="hard">复杂</option>
+                    </select>
+                  </label>
+                </div>
                 <label className="block">
-                  <span className="text-xs font-medium text-slate-500">分类</span>
-                  <select
-                    name="category"
-                    className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500"
-                  >
-                    {dashboard.categories.map((category) => (
-                      <option key={category.name} value={category.name}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
+                  <span className="text-xs font-medium text-slate-500">备注</span>
+                  <textarea
+                    name="notes"
+                    rows={3}
+                    placeholder="关键做法、口味偏好、下次调整"
+                    className="mt-1 w-full resize-none rounded-[8px] border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-emerald-500"
+                  />
                 </label>
-                <TextField
-                  name="cook_time_minutes"
-                  label="分钟"
-                  type="number"
-                  placeholder="15"
-                  min="1"
-                />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
-                <TextField name="ingredients" label="食材" placeholder="番茄、鸡蛋、葱" />
-                <label className="block">
-                  <span className="text-xs font-medium text-slate-500">难度</span>
-                  <select
-                    name="difficulty"
-                    defaultValue="easy"
-                    className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500"
-                  >
-                    <option value="easy">简单</option>
-                    <option value="medium">中等</option>
-                    <option value="hard">复杂</option>
-                  </select>
-                </label>
-              </div>
-              <label className="block">
-                <span className="text-xs font-medium text-slate-500">备注</span>
-                <textarea
-                  name="notes"
-                  rows={3}
-                  placeholder="关键做法、口味偏好、下次调整"
-                  className="mt-1 w-full resize-none rounded-[8px] border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-emerald-500"
-                />
-              </label>
-              <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[8px] bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 sm:w-fit">
-                <Plus className="size-4" aria-hidden="true" />
-                保存
+                <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[8px] bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 sm:w-fit">
+                  <Plus className="size-4" aria-hidden="true" />
+                  保存
+                </button>
+              </form>
+            </details>
+
+            <form action={logout}>
+              <button className="h-14 w-full rounded-[8px] border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-emerald-400 hover:text-emerald-700 sm:w-auto">
+                退出登录
               </button>
             </form>
-          </section>
+          </div>
         ) : null}
 
         <section className="grid gap-5 lg:grid-cols-[180px_1fr]">
