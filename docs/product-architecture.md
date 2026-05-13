@@ -4,7 +4,7 @@
 
 家庭菜单 App 是一个面向家庭成员共享的菜谱与做饭灵感工具。用户打开应用后可以快速回答“今天吃什么”，也可以维护家庭常做菜、按分类和标签查找菜谱、记录最近做过的菜。
 
-当前执行版本的核心模型：一户一个 `household`，全家共用同一个菜谱库。Next.js 服务端使用 Supabase service role key 读写数据，新增和编辑类写操作用家庭口令保护。
+当前执行版本的核心模型：一户一个 `household`，全家共用同一个菜谱库。Next.js 服务端使用 Supabase service role key 读写数据，新增和编辑类写操作由登录密码和 httpOnly cookie 会话保护。
 
 多成员账号、邀请加入、个人收藏等能力作为后续增强项保留在设计树里。
 
@@ -269,6 +269,7 @@ src/
 NEXT_PUBLIC_SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 MENU_WRITE_PASSWORD=
+MENU_SESSION_SECRET=
 MENU_HOUSEHOLD_NAME=家庭菜单
 ```
 
@@ -276,7 +277,8 @@ MENU_HOUSEHOLD_NAME=家庭菜单
 
 - 浏览器端只访问 Next.js 页面和 Server Actions。
 - 服务端使用 `SUPABASE_SERVICE_ROLE_KEY` 读写 Postgres。
-- 写操作校验 `MENU_WRITE_PASSWORD`。
+- `MENU_WRITE_PASSWORD` 作为家庭登录密码。
+- 登录成功后写入 httpOnly cookie；`MENU_SESSION_SECRET` 用于 cookie 签名。
 
 ### 6.5 Vercel 部署
 

@@ -39,10 +39,11 @@ pnpm build
 NEXT_PUBLIC_SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 MENU_WRITE_PASSWORD=
+MENU_SESSION_SECRET=
 MENU_HOUSEHOLD_NAME=家庭菜单
 ```
 
-`MENU_WRITE_PASSWORD` 用于保护新增菜谱表单。
+`MENU_WRITE_PASSWORD` 是家庭登录密码。登录成功后，应用会写入 httpOnly cookie；`MENU_SESSION_SECRET` 用于签名 cookie，建议配置为一段随机字符串。
 
 数据库 schema 位于：
 

@@ -3,19 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ensureDefaultCategories, ensureHousehold } from "@/lib/dashboard-data";
-import { getWritePassword } from "@/lib/supabase/config";
+import { isMenuSessionValid } from "@/lib/menu-session";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
 export async function createRecipe(formData: FormData) {
-  const writePassword = getWritePassword();
-  const submittedPassword = formData.get("password")?.toString().trim() ?? "";
-
-  if (!writePassword) {
-    redirectWithMessage("请先配置家庭写入口令");
-  }
-
-  if (submittedPassword !== writePassword) {
-    redirectWithMessage("家庭口令错误");
+  if (!(await isMenuSessionValid())) {
+    redirectWithMessage("请先登录");
   }
 
   const supabase = getSupabaseServiceClient();
