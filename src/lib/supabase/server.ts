@@ -1,31 +1,25 @@
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { getSupabaseRuntimeConfig } from "./config";
+import "server-only";
 
-export async function getSupabaseServerClient(): Promise<SupabaseClient | null> {
-  const config = getSupabaseRuntimeConfig();
+import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseServiceConfig } from "./config";
+
+let serviceClient: SupabaseClient | null = null;
+
+export function getSupabaseServiceClient(): SupabaseClient | null {
+  const config = getSupabaseServiceConfig();
 
   if (!config) {
     return null;
   }
 
-  const cookieStore = await cookies();
-
-  return createServerClient(config.url, config.anonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          try {
-            cookieStore.set(name, value, options);
-          } catch {
-            return;
-          }
-        });
-      },
+  serviceClient ??= createClient(config.url, config.serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
     },
   });
+
+  return serviceClient;
 }

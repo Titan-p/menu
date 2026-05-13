@@ -4,7 +4,9 @@
 
 家庭菜单 App 是一个面向家庭成员共享的菜谱与做饭灵感工具。用户打开应用后可以快速回答“今天吃什么”，也可以维护家庭常做菜、按分类和标签查找菜谱、记录最近做过的菜。
 
-已确认的核心模型：一户一个 `household`，多个成员加入同一个家庭空间，共享菜谱、分类、标签与图片。
+当前执行版本的核心模型：一户一个 `household`，全家共用同一个菜谱库。Next.js 服务端使用 Supabase service role key 读写数据，新增和编辑类写操作用家庭口令保护。
+
+多成员账号、邀请加入、个人收藏等能力作为后续增强项保留在设计树里。
 
 ## 2. 目标与边界
 
@@ -18,14 +20,13 @@
 
 ### 2.2 首版范围
 
-- Supabase Auth 登录。
-- 家庭空间创建与成员加入。
-- 菜谱 CRUD。
+- 单家庭空间自动初始化。
+- 菜谱新增、查看。
 - 分类管理。
 - 标签管理。
-- 图片上传。
+- 图片上传设计。
 - 搜索与筛选。
-- 收藏与标记做过。
+- 标记做过设计。
 - 首页灵感推荐。
 - Vercel 部署。
 
@@ -38,6 +39,7 @@
 - 一周菜单规划。
 - 营养与预算统计。
 - PWA 离线访问。
+- Supabase Auth、成员邀请、个人收藏。
 
 ## 3. 用户与场景
 
@@ -65,8 +67,6 @@
 - `/recipes/[id]/edit`：编辑菜谱
 - `/categories`：分类管理
 - `/settings`：家庭设置
-- `/login`：登录
-- `/join/[inviteCode]`：加入家庭空间
 
 ### 4.2 移动端导航
 
@@ -246,7 +246,6 @@ src/
   lib/
     supabase/
       server.ts
-      browser.ts
     db/
       types.ts
     recommendation.ts
@@ -262,21 +261,22 @@ src/
 
 ### 6.4 Supabase 集成
 
-官方建议采用 `@supabase/ssr` 在 Next.js App Router 中通过 Cookie 管理 session，使 Server Components、Server Actions、Route Handlers 都能读取登录状态。
+当前执行版本采用 `@supabase/supabase-js` 在 Next.js 服务端创建 service role client。所有 Supabase 写入通过 Server Actions 进入，浏览器端只提交表单。
 
 环境变量：
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+MENU_WRITE_PASSWORD=
+MENU_HOUSEHOLD_NAME=家庭菜单
 ```
 
 使用规则：
 
-- 浏览器端使用 `NEXT_PUBLIC_SUPABASE_ANON_KEY`。
-- 服务端普通业务读写使用用户 session 绑定的 Supabase client。
-- 管理型任务使用 `SUPABASE_SERVICE_ROLE_KEY`，调用位置限定在服务端。
+- 浏览器端只访问 Next.js 页面和 Server Actions。
+- 服务端使用 `SUPABASE_SERVICE_ROLE_KEY` 读写 Postgres。
+- 写操作校验 `MENU_WRITE_PASSWORD`。
 
 ### 6.5 Vercel 部署
 
@@ -301,7 +301,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 create table households (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  created_by uuid not null references auth.users(id),
+  created_by uuid references auth.users(id),
   created_at timestamptz not null default now()
 );
 
@@ -343,7 +343,7 @@ create table recipes (
   ingredients jsonb not null default '[]'::jsonb,
   steps jsonb not null default '[]'::jsonb,
   notes text,
-  created_by uuid not null references auth.users(id),
+  created_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

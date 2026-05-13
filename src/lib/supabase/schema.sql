@@ -1,7 +1,7 @@
 create table if not exists households (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  created_by uuid not null references auth.users(id),
+  created_by uuid references auth.users(id),
   created_at timestamptz not null default now()
 );
 
@@ -43,7 +43,7 @@ create table if not exists recipes (
   ingredients jsonb not null default '[]'::jsonb,
   steps jsonb not null default '[]'::jsonb,
   notes text,
-  created_by uuid not null references auth.users(id),
+  created_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -78,6 +78,9 @@ create table if not exists household_invites (
   expires_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+alter table households alter column created_by drop not null;
+alter table recipes alter column created_by drop not null;
 
 create index if not exists recipes_household_updated_idx
   on recipes (household_id, updated_at desc);

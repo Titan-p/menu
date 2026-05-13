@@ -1,13 +1,13 @@
 # 家庭菜单
 
-家庭菜单是一个基于 Next.js、Vercel 和 Supabase 的单页网页 App，用于管理家庭菜谱、按分类和标签查找做饭灵感，并支持后续扩展为多成员共享菜谱库。
+家庭菜单是一个基于 Next.js、Vercel 和 Supabase 的单页网页 App，用于管理家庭菜谱、按分类和标签查找做饭灵感。
 
 ## 技术栈
 
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- Supabase Auth / Postgres / Storage
+- Supabase Postgres / Storage
 - Vercel
 
 ## 本地运行
@@ -31,20 +31,29 @@ pnpm build
 
 ## Supabase 配置
 
-当前代码已提供 Supabase client 骨架，页面首版可以在环境变量为空时完成构建和部署。
+当前代码采用单家庭模式。Next.js 服务端使用 Supabase service role key 读写数据，浏览器端只访问 Next.js 页面和 Server Actions。
 
-后续接入真实数据时，在 Vercel Project Settings 中配置：
+在 Vercel Project Settings 中配置：
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+MENU_WRITE_PASSWORD=
+MENU_HOUSEHOLD_NAME=家庭菜单
 ```
+
+`MENU_WRITE_PASSWORD` 用于保护新增菜谱表单。
 
 数据库 schema 位于：
 
 ```text
 src/lib/supabase/schema.sql
+```
+
+已执行旧版 schema 的 Supabase 项目，再执行：
+
+```text
+src/lib/supabase/single-family-migration.sql
 ```
 
 产品与架构设计位于：

@@ -1,27 +1,31 @@
 import Image from "next/image";
-import Link from "next/link";
 import {
   CalendarDays,
   ChevronRight,
   Clock3,
+  KeyRound,
   Plus,
   Search,
   Shuffle,
   Sparkles,
   Users,
 } from "lucide-react";
-import { signOut } from "@/app/actions/auth";
+import { createRecipe } from "@/app/actions/recipes";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { navItems, quickFilters } from "@/lib/sample-data";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+type HomeProps = {
+  searchParams?: Promise<{ message?: string }>;
+};
+
+export default async function Home({ searchParams }: HomeProps) {
   const dashboard = await getDashboardData();
+  const resolvedSearchParams = await searchParams;
+  const message = resolvedSearchParams?.message;
   const featuredRecipe = dashboard.featuredRecipe;
   const secondaryRecipes = dashboard.recipes.filter((recipe) => recipe.id !== featuredRecipe.id);
-  const memberCount = dashboard.stats.find((item) => item.label === "成员")?.value ?? "4";
-  const isAuthenticated = dashboard.authMode === "signed-in" || dashboard.authMode === "empty";
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -52,29 +56,14 @@ export default async function Home() {
               <Plus className="size-5" aria-hidden="true" />
               <span className="sr-only">添加菜谱</span>
             </button>
-            {dashboard.authMode === "empty" ? (
-              <Link
-                href="/setup"
-                className="hidden h-11 items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800 shadow-sm transition hover:border-emerald-400 sm:inline-flex"
-              >
-                创建家庭
-              </Link>
-            ) : isAuthenticated ? (
-              <form action={signOut}>
-                <button className="hidden h-11 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-700 sm:inline-flex sm:items-center">
-                  退出
-                </button>
-              </form>
-            ) : (
-              <Link
-                href="/login"
-                className="hidden h-11 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-700 sm:inline-flex"
-              >
-                登录
-              </Link>
-            )}
           </div>
         </header>
+
+        {message ? (
+          <div className="mb-4 rounded-[8px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+            {message}
+          </div>
+        ) : null}
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
           <div className="overflow-hidden rounded-[8px] bg-slate-950 text-white shadow-xl shadow-slate-200">
@@ -147,7 +136,7 @@ export default async function Home() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">家庭空间</p>
-                  <p className="font-semibold text-slate-950">{memberCount} 位成员共享</p>
+                  <p className="font-semibold text-slate-950">单家庭共享菜谱</p>
                 </div>
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2">
@@ -194,6 +183,99 @@ export default async function Home() {
               </div>
             </div>
           </aside>
+        </section>
+
+        <section className="mt-6 rounded-[8px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold tracking-normal">新增菜谱</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {dashboard.canWrite ? "输入家庭口令后保存到 Supabase" : "配置家庭口令后开放写入"}
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+              <KeyRound className="size-3.5" aria-hidden="true" />
+              家庭口令
+            </div>
+          </div>
+
+          <form action={createRecipe} className="mt-5 grid gap-3 lg:grid-cols-[1fr_150px_140px_120px]">
+            <label className="block">
+              <span className="text-xs font-medium text-slate-500">菜名</span>
+              <input
+                name="title"
+                required
+                placeholder="例如 蒜蓉西兰花"
+                className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 px-3 text-sm outline-none transition focus:border-emerald-500"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-slate-500">分类</span>
+              <select
+                name="category"
+                className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500"
+              >
+                {dashboard.categories.map((category) => (
+                  <option key={category.name} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-slate-500">耗时</span>
+              <input
+                name="cook_time_minutes"
+                type="number"
+                min="1"
+                inputMode="numeric"
+                placeholder="20"
+                className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 px-3 text-sm outline-none transition focus:border-emerald-500"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-slate-500">难度</span>
+              <select
+                name="difficulty"
+                defaultValue="easy"
+                className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-500"
+              >
+                <option value="easy">简单</option>
+                <option value="medium">中等</option>
+                <option value="hard">复杂</option>
+              </select>
+            </label>
+            <label className="block lg:col-span-2">
+              <span className="text-xs font-medium text-slate-500">食材</span>
+              <input
+                name="ingredients"
+                placeholder="西兰花、蒜、生抽"
+                className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 px-3 text-sm outline-none transition focus:border-emerald-500"
+              />
+            </label>
+            <label className="block lg:col-span-1">
+              <span className="text-xs font-medium text-slate-500">口令</span>
+              <input
+                name="password"
+                type="password"
+                required
+                className="mt-1 h-11 w-full rounded-[8px] border border-slate-200 px-3 text-sm outline-none transition focus:border-emerald-500"
+              />
+            </label>
+            <button className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 lg:mt-6">
+              <Plus className="size-4" aria-hidden="true" />
+              保存
+            </button>
+            <label className="block lg:col-span-4">
+              <span className="text-xs font-medium text-slate-500">备注</span>
+              <textarea
+                name="notes"
+                rows={3}
+                placeholder="关键做法、口味偏好、下次调整"
+                className="mt-1 w-full resize-none rounded-[8px] border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-emerald-500"
+              />
+            </label>
+          </form>
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
@@ -291,14 +373,8 @@ export default async function Home() {
                 <div className="rounded-[8px] border border-dashed border-slate-300 bg-white p-8 text-center md:col-span-2 xl:col-span-3">
                   <p className="text-base font-semibold text-slate-950">菜谱库等待添加第一道菜</p>
                   <p className="mt-2 text-sm text-slate-500">
-                    登录并创建家庭空间后，新增菜谱会出现在这里。
+                    在上方表单保存后，新增菜谱会出现在这里。
                   </p>
-                  <Link
-                    href="/login"
-                    className="mt-5 inline-flex h-11 items-center justify-center rounded-[8px] bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                  >
-                    去登录
-                  </Link>
                 </div>
               )}
             </div>
